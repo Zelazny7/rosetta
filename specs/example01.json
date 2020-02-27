@@ -1,0 +1,26 @@
+{
+    "variable": "iv_add1naprop",
+    "type": "int4",
+    "depends": "add1naprop",
+    "ops": [
+        {
+            "map":
+                {
+                    "op": "and",
+                    "apply": [
+                        {
+                            "op": "eq", "value": -1
+                        },
+                        {
+                            "op": "gt", "value": 10
+                        }
+                    ]
+                },
+            "val": -998
+        }
+    ],
+    "meta": {
+        "neutral": [-998],
+        "monotonicity": -1
+    }
+}
