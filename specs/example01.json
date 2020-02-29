@@ -1,26 +1,35 @@
 {
-    "variable": "iv_add1naprop",
-    "type": "int4",
-    "depends": "add1naprop",
-    "ops": [
+    "op": "and",
+    "operands": [
         {
-            "map":
+            "op": "eq",
+            "target": "mpg",
+            "value": 25
+        },
+        {
+            "op": "not",
+            "operands": [
                 {
-                    "op": "and",
-                    "apply": [
+                    "op": "or",
+                    "operands": [
                         {
-                            "op": "eq", "value": -1
+                            "op": "eq",
+                            "target": "disp",
+                            "value": 10
                         },
                         {
-                            "op": "gt", "value": 10
+                            "op": "in",
+                            "target": "cyl",
+                            "values": [
+                                2,
+                                4,
+                                6,
+                                8
+                            ]
                         }
                     ]
-                },
-            "val": -998
+                }
+            ]
         }
-    ],
-    "meta": {
-        "neutral": [-998],
-        "monotonicity": -1
-    }
+    ]
 }
