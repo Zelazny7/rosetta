@@ -20,8 +20,13 @@ class Operation:
             del x["op"]
             return klass(**x)
 
-    def __init__(self, **kwargs):
+    def __init__(self, operands=None, **kwargs):
         super().__init__()
+        if operands is not None:
+            self.operands = [Operation.from_dict(d) for d in operands]
+        else:
+            self.operands = []
+        self.walk()
 
     @property
     def indent(self):
@@ -30,6 +35,30 @@ class Operation:
     @indent.setter
     def indent(self, value):
         Operation._indent = value
+
+    def walk(self, other=None):
+        """Walk Operation and call matching methods in `other` object"""
+        klass = type(self).__name__
+
+        # call EnterAndOperation in `other` object if klass is an AndOperation and attribute exists
+        fenter = getattr(other, "Enter" + klass, None)
+        if fenter is not None:
+            fenter(self)
+
+        # Call walk on children if they exist
+        for operand in self.operands:
+            operand.walk(other)
+
+        # call ExitAndOperation in `other` object if klass is an AndOperation and attribute exists
+        fexit = getattr(other, "Exit" + klass, None)
+        if fexit is not None:
+            fexit(self)
+
+    def __str__(self):
+        self.indent += 2
+        res = f"\n".join([(" " * self.indent) + str(x) for x in self.operands])
+        self.indent -= 2
+        return res + "\n" + " " * self.indent + "]"
 
 
 class EqualOperation(Operation):
@@ -52,21 +81,7 @@ class InOperation(Operation):
         return f"{self.target} in ({', '.join([str(x) for x in self.value])})"
 
 
-class MultiOperation(Operation, ABC):
-    """MultiOperations combine collections of SingleOperations"""
-
-    def __init__(self, operands: List[Dict[str, Any]], **kwargs):
-        super().__init__(**kwargs)
-        self.operands = [Operation.from_dict(d) for d in operands]
-
-    def __str__(self):
-        self.indent += 2
-        res = f"\n".join([(" " * self.indent) + str(x) for x in self.operands])
-        self.indent -= 2
-        return res + "\n" + " " * self.indent + "]"
-
-
-class AndOperation(MultiOperation):
+class AndOperation(Operation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
 
@@ -74,7 +89,7 @@ class AndOperation(MultiOperation):
         return "and [\n" + super().__str__()
 
 
-class NotOperation(MultiOperation):
+class NotOperation(Operation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
 
@@ -82,7 +97,7 @@ class NotOperation(MultiOperation):
         return "not [\n" + super().__str__()
 
 
-class OrOperation(MultiOperation):
+class OrOperation(Operation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
 
@@ -101,12 +116,29 @@ class AssignmentOperation(Operation):
         return f"({str(self.predicate)}) => {self.variable} = {self.value}"
 
 
-class IfElseOperation(MultiOperation):
+class IfElseOperation(Operation):
     def __init__(self, operands: List[Dict[str, Any]]):
         super().__init__(operands)
 
     def __str__(self):
         return f"ifelse [\n{super().__str__()}]"
+
+
+class VariableTransformation:
+    def __init__(self):
+        super().__init__()
+
+    def EnterInOperation(self, other: InOperation):
+        print("Entered an In Operation")
+        print(str(other))
+
+    def EnterAndOperation(self, other: AndOperation):
+        print("Entered And")
+        # print(str(other))
+
+    def ExitAndOperation(self, other: AndOperation):
+        print("Exited And")
+        # print(str(other))
 
 
 if __name__ == "__main__":
@@ -129,18 +161,24 @@ if __name__ == "__main__":
         ],
     }
 
+    # register operations with factory
     Operation.register_operation("and", AndOperation)
     Operation.register_operation("eq", EqualOperation)
     Operation.register_operation("not", NotOperation)
     Operation.register_operation("or", OrOperation)
     Operation.register_operation("in", InOperation)
-
     Operation.register_operation("assign", AssignmentOperation)
     Operation.register_operation("ifelse", IfElseOperation)
 
+    # create compound operation from dictionary
     res1 = Operation.from_dict(d)
     print(res1)
 
+    # demonstrate variable walking
+    v = VariableTransformation()
+    res1.walk(v)
+
+    # reading from json file
     import json
 
     with open("specs/example02.json", "r") as fin:
@@ -148,9 +186,3 @@ if __name__ == "__main__":
 
     res2 = Operation.from_dict(j)
     print(res2)
-
-    import inspect
-
-    # print(inspect.getmembers(AssignmentOperation))
-
-    print(AssignmentOperation.__dict__)
