@@ -43,13 +43,13 @@ class EqualOperation(Operation):
 
 
 class InOperation(Operation):
-    def __init__(self, target: str, values: List[Any]):
+    def __init__(self, target: str, value: List[Any]):
         super().__init__()
         self.target = target
-        self.values = values
+        self.value = value
 
     def __str__(self) -> str:
-        return f"{self.target} in ({', '.join([str(x) for x in self.values])})"
+        return f"{self.target} in ({', '.join([str(x) for x in self.value])})"
 
 
 class MultiOperation(Operation, ABC):
@@ -91,14 +91,14 @@ class OrOperation(MultiOperation):
 
 
 class AssignmentOperation(Operation):
-    def __init__(self, variable: str, operation: Dict[str, Any], value: Any):
+    def __init__(self, variable: str, predicate: Dict[str, Any], value: Any):
         super().__init__()
         self.variable = variable
-        self.Operation = Operation.from_dict(operation)
+        self.predicate = Operation.from_dict(predicate)
         self.value = value
 
     def __str__(self):
-        return f"({str(self.Operation)}) => {self.variable} = {self.value}"
+        return f"({str(self.predicate)}) => {self.variable} = {self.value}"
 
 
 class IfElseOperation(MultiOperation):
@@ -121,7 +121,7 @@ if __name__ == "__main__":
                         "op": "or",
                         "operands": [
                             {"op": "eq", "target": "disp", "value": 10},
-                            {"op": "in", "target": "cyl", "values": [2, 4, 6, 8]},
+                            {"op": "in", "target": "cyl", "value": [2, 4, 6, 8]},
                         ],
                     }
                 ],
@@ -148,3 +148,9 @@ if __name__ == "__main__":
 
     res2 = Operation.from_dict(j)
     print(res2)
+
+    import inspect
+
+    # print(inspect.getmembers(AssignmentOperation))
+
+    print(AssignmentOperation.__dict__)

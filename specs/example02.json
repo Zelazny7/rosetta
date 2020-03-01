@@ -4,7 +4,7 @@
         {
             "op": "assign",
             "variable": "iv_add1naprop",
-            "operation": {
+            "predicate": {
                 "op": "eq",
                 "target": "add1naprop",
                 "value": 4
@@ -14,10 +14,10 @@
         {
             "op": "assign",
             "variable": "iv_add1naprop",
-            "operation": {
+            "predicate": {
                 "op": "in",
                 "target": "add1naprop",
-                "values": [
+                "value": [
                     2,
                     3
                 ]
@@ -27,7 +27,7 @@
         {
             "op": "assign",
             "variable": "iv_add1naprop",
-            "operation": {
+            "predicate": {
                 "op": "eq",
                 "target": "add1naprop",
                 "value": 1
@@ -37,13 +37,13 @@
         {
             "op": "assign",
             "variable": "iv_add1naprop",
-            "operation": {
+            "predicate": {
                 "op": "and",
                 "operands": [
                     {
                         "op": "in",
                         "target": "add1naprop",
-                        "values": [
+                        "value": [
                             -1,
                             2,
                             3
@@ -52,7 +52,7 @@
                     {
                         "op": "in",
                         "target": "nap_summary",
-                        "values": [
+                        "value": [
                             10,
                             11,
                             12

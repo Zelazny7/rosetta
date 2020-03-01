@@ -20,7 +20,7 @@
                         {
                             "op": "in",
                             "target": "cyl",
-                            "values": [
+                            "value": [
                                 2,
                                 4,
                                 6,
