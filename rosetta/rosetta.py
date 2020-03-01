@@ -17,14 +17,7 @@ class Operation:
             raise ValueError(f"Operation: {x['op']} not registered.")
         else:
             del x["op"]
-            res = klass(**x)
-            operands = x.get("operands", None)
-            
-            if operands is not None:
-                res = cast(MultiPredicate, res)
-                res.operands = [cast(Predicate, Operation.from_dict(d)) for d in operands]
-
-            return res
+            return klass(**x)
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -37,17 +30,12 @@ class Operation:
     def indent(self, value):
         Operation._indent = value
     
-class Predicate(Operation, ABC):
-    pass
-
-
-class SinglePredicate(Predicate, ABC):
-    """SinglePredicate only performs one operation"""
+class SingleOperation(Operation, ABC):
+    """SingleOperation only performs one operation"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
-class EqualPredicate(Predicate):
+class EqualOperation(Operation):
     def __init__(self, target: str, value: Any):
         super().__init__()
         self.target = target
@@ -56,7 +44,7 @@ class EqualPredicate(Predicate):
     def __str__(self) -> str:
         return f"{self.target} == {self.value}"
 
-class InPredicate(Predicate):
+class InOperation(Operation):
     def __init__(self, target: str, values: List[Any]):
         super().__init__()
         self.target = target
@@ -66,27 +54,19 @@ class InPredicate(Predicate):
         return f"{self.target} in ({', '.join([str(x) for x in self.values])})"
 
 
-class MultiPredicate(Predicate, ABC):
-    """MultiPredicates combine collections of SinglePredicates"""
-    def __init__(self, operands: List[Predicate], **kwargs):
+class MultiOperation(Operation, ABC):
+    """MultiOperations combine collections of SingleOperations"""
+    def __init__(self, operands: List[Dict[str, Any]], **kwargs):
         super().__init__(**kwargs)
-        self._operands = operands
+        self.operands = [Operation.from_dict(d) for d in operands]
 
-    @property
-    def operands(self) -> List[Predicate]:
-        return self._operands
-    
-    @operands.setter
-    def operands(self, value):
-        self._operands = value
-    
     def __str__(self):
         self.indent += 2
         res =  f'\n'.join([(' ' * self.indent) + str(x) for x in self.operands])
         self.indent -= 2
         return res + '\n' + ' ' * self.indent + ']'
 
-class AndPredicate(MultiPredicate):
+class AndOperation(MultiOperation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
     
@@ -94,19 +74,38 @@ class AndPredicate(MultiPredicate):
         return "and [\n" + super().__str__()
 
 
-class NotPredicate(MultiPredicate):
+class NotOperation(MultiOperation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
     
     def __str__(self):
         return "not [\n" +  super().__str__()
 
-class OrPredicate(MultiPredicate):
+class OrOperation(MultiOperation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
     
     def __str__(self):
         return  "or [\n" +  super().__str__()
+
+class AssignmentOperation(Operation):
+
+    def __init__(self, variable: str, operation: Dict[str, Any], value: Any):
+        super().__init__()
+        self.variable = variable
+        self.Operation = Operation.from_dict(operation)
+        self.value = value
+    
+    def __str__(self):
+        return f"({str(self.Operation)}) => {self.variable} = {self.value}"
+
+class IfElseOperation(MultiOperation):
+
+    def __init__(self, operands: List[Dict[str, Any]]):
+        super().__init__(operands)
+    
+    def __str__(self):
+        return  f"ifelse [\n{super().__str__()}]"
 
 
 if __name__ == "__main__":
@@ -142,17 +141,20 @@ if __name__ == "__main__":
         ]
         }
     
-    Operation.register_operation("and", AndPredicate)
-    Operation.register_operation("eq", EqualPredicate)
-    Operation.register_operation("not", NotPredicate)
-    Operation.register_operation("or", OrPredicate)
-    Operation.register_operation("in", InPredicate)
+    Operation.register_operation("and", AndOperation)
+    Operation.register_operation("eq", EqualOperation)
+    Operation.register_operation("not", NotOperation)
+    Operation.register_operation("or", OrOperation)
+    Operation.register_operation("in", InOperation)
+
+    Operation.register_operation("assign", AssignmentOperation)
+    Operation.register_operation("ifelse", IfElseOperation)
 
     res1 = Operation.from_dict(d)
     print(res1)
 
     import json
-    with open('specs/example01.json', 'r') as fin:
+    with open('specs/example02.json', 'r') as fin:
         j = json.load(fin)
     
     res2 = Operation.from_dict(j)

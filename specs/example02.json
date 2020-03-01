@@ -1,0 +1,66 @@
+{
+    "op": "ifelse",
+    "operands": [
+        {
+            "op": "assign",
+            "variable": "iv_add1naprop",
+            "operation": {
+                "op": "eq",
+                "target": "add1naprop",
+                "value": 4
+            },
+            "value": -1
+        },
+        {
+            "op": "assign",
+            "variable": "iv_add1naprop",
+            "operation": {
+                "op": "in",
+                "target": "add1naprop",
+                "values": [
+                    2,
+                    3
+                ]
+            },
+            "value": 0
+        },
+        {
+            "op": "assign",
+            "variable": "iv_add1naprop",
+            "operation": {
+                "op": "eq",
+                "target": "add1naprop",
+                "value": 1
+            },
+            "value": 2
+        },
+        {
+            "op": "assign",
+            "variable": "iv_add1naprop",
+            "operation": {
+                "op": "and",
+                "operands": [
+                    {
+                        "op": "in",
+                        "target": "add1naprop",
+                        "values": [
+                            -1,
+                            2,
+                            3
+                        ]
+                    },
+                    {
+                        "op": "in",
+                        "target": "nap_summary",
+                        "values": [
+                            10,
+                            11,
+                            12
+                        ]
+                    }
+                ]
+            },
+            "value": 2
+        }
+    ]
+}
