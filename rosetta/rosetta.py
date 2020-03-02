@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Type, cast
 
+# TODO: Create StdioTransformer instead of __str__ methods for each operation
 
 class Operation:
     registry: Dict[str, Type[Operation]] = {}
@@ -46,8 +47,13 @@ class Operation:
             fenter(self)
 
         # Call walk on children if they exist
-        for operand in self.operands:
+        for i, operand in enumerate(self.operands):
             operand.walk(other)
+
+            if i < len(self.operands) - 1:
+                fwhile = getattr(other, "While" + klass, None)
+                if fwhile is not None:
+                    fwhile(self)
 
         # call ExitAndOperation in `other` object if klass is an AndOperation and attribute exists
         fexit = getattr(other, "Exit" + klass, None)
@@ -124,21 +130,53 @@ class IfElseOperation(Operation):
         return f"ifelse [\n{super().__str__()}]"
 
 
-class VariableTransformation:
+class BaseTransformer(ABC):
     def __init__(self):
         super().__init__()
+        self.indent = 0
+
+    @property
+    def s(self) -> str:
+        return " " * self.indent
+
+
+class PandasTransformer(BaseTransformer):
+    def __init__(self, df: str, variable: str):
+        super().__init__()
+        self.variable = variable
+        self.df = df
 
     def EnterInOperation(self, other: InOperation):
-        print("Entered an In Operation")
-        print(str(other))
+        res = f'{self.s}({self.df}["{other.target}"].isin({str(other.value)}))'
+        print(res, end="")
 
     def EnterAndOperation(self, other: AndOperation):
-        print("Entered And")
-        # print(str(other))
+        print(self.s + "(", end="")
+        self.indent += 2
+
+    def WhileAndOperation(self, other: AndOperation):
+        print(" &")
 
     def ExitAndOperation(self, other: AndOperation):
-        print("Exited And")
-        # print(str(other))
+        self.indent -= 2
+        print(")", end="")
+
+    def EnterEqualOperation(self, other: EqualOperation):
+        print(f'({self.df}["{other.target}"] == {other.value})', end="")
+
+    def EnterNotOperation(self, other: NotOperation):
+        print(f"{self.s}~", end="")
+
+    def EnterOrOperation(self, other: OrOperation):
+        print("(", end="")
+        self.indent += 2
+
+    def WhileOrOperation(self, other: OrOperation):
+        print(" |")
+
+    def ExitOrOperation(self, other: OrOperation):
+        print(")")
+        self.indent -= 2
 
 
 if __name__ == "__main__":
@@ -172,10 +210,10 @@ if __name__ == "__main__":
 
     # create compound operation from dictionary
     res1 = Operation.from_dict(d)
-    print(res1)
+    # print(res1)
 
     # demonstrate variable walking
-    v = VariableTransformation()
+    v = PandasTransformer(df="df", variable="var1")
     res1.walk(v)
 
     # reading from json file
@@ -185,4 +223,5 @@ if __name__ == "__main__":
         j = json.load(fin)
 
     res2 = Operation.from_dict(j)
-    print(res2)
+    res2.walk(v)
+    # print(res2)
