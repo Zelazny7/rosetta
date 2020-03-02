@@ -2,64 +2,72 @@
     "op": "ifelse",
     "operands": [
         {
-            "op": "assign",
+            "op": "if",
             "variable": "iv_add1naprop",
-            "predicate": {
-                "op": "eq",
-                "target": "add1naprop",
-                "value": 4
-            },
+            "operands": [
+                {
+                    "op": "eq",
+                    "target": "add1naprop",
+                    "value": 4
+                }
+            ],
             "value": -1
         },
         {
-            "op": "assign",
+            "op": "if",
             "variable": "iv_add1naprop",
-            "predicate": {
-                "op": "in",
-                "target": "add1naprop",
-                "value": [
-                    2,
-                    3
-                ]
-            },
+            "operands": [
+                {
+                    "op": "in",
+                    "target": "add1naprop",
+                    "value": [
+                        2,
+                        3
+                    ]
+                }
+            ],
             "value": 0
         },
         {
-            "op": "assign",
+            "op": "if",
             "variable": "iv_add1naprop",
-            "predicate": {
-                "op": "eq",
-                "target": "add1naprop",
-                "value": 1
-            },
+            "operands": [
+                {
+                    "op": "eq",
+                    "target": "add1naprop",
+                    "value": 1
+                }
+            ],
             "value": 2
         },
         {
-            "op": "assign",
+            "op": "if",
             "variable": "iv_add1naprop",
-            "predicate": {
-                "op": "and",
-                "operands": [
-                    {
-                        "op": "in",
-                        "target": "add1naprop",
-                        "value": [
-                            -1,
-                            2,
-                            3
-                        ]
-                    },
-                    {
-                        "op": "in",
-                        "target": "nap_summary",
-                        "value": [
-                            10,
-                            11,
-                            12
-                        ]
-                    }
-                ]
-            },
+            "operands": [
+                {
+                    "op": "and",
+                    "operands": [
+                        {
+                            "op": "in",
+                            "target": "add1naprop",
+                            "value": [
+                                -1,
+                                2,
+                                3
+                            ]
+                        },
+                        {
+                            "op": "in",
+                            "target": "nap_summary",
+                            "value": [
+                                10,
+                                11,
+                                12
+                            ]
+                        }
+                    ]
+                }
+            ],
             "value": 2
         }
     ]

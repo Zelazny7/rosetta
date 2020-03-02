@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Type, cast
 
-# TODO: Create StdioTransformer instead of __str__ methods for each operation
+# TODO: Create StdoutTransformer instead of __str__ methods for each operation
 
 class Operation:
     registry: Dict[str, Type[Operation]] = {}
@@ -27,7 +27,7 @@ class Operation:
             self.operands = [Operation.from_dict(d) for d in operands]
         else:
             self.operands = []
-        self.walk()
+        # self.walk()
 
     @property
     def indent(self):
@@ -37,7 +37,7 @@ class Operation:
     def indent(self, value):
         Operation._indent = value
 
-    def walk(self, other=None):
+    def walk(self, other: BaseTransformer):
         """Walk Operation and call matching methods in `other` object"""
         klass = type(self).__name__
 
@@ -47,25 +47,21 @@ class Operation:
             fenter(self)
 
         # Call walk on children if they exist
+        other.indent += 2
         for i, operand in enumerate(self.operands):
             operand.walk(other)
 
-            if i < len(self.operands) - 1:
+            if i < len(self.operands):
                 fwhile = getattr(other, "While" + klass, None)
                 if fwhile is not None:
                     fwhile(self)
+        
+        other.indent -= 2
 
         # call ExitAndOperation in `other` object if klass is an AndOperation and attribute exists
         fexit = getattr(other, "Exit" + klass, None)
         if fexit is not None:
             fexit(self)
-
-    def __str__(self):
-        self.indent += 2
-        res = f"\n".join([(" " * self.indent) + str(x) for x in self.operands])
-        self.indent -= 2
-        return res + "\n" + " " * self.indent + "]"
-
 
 class EqualOperation(Operation):
     def __init__(self, target: str, value: Any):
@@ -73,9 +69,7 @@ class EqualOperation(Operation):
         self.target = target
         self.value = value
 
-    def __str__(self) -> str:
-        return f"{self.target} == {self.value}"
-
+    
 
 class InOperation(Operation):
     def __init__(self, target: str, value: List[Any]):
@@ -83,32 +77,30 @@ class InOperation(Operation):
         self.target = target
         self.value = value
 
-    def __str__(self) -> str:
-        return f"{self.target} in ({', '.join([str(x) for x in self.value])})"
-
+    
 
 class AndOperation(Operation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
 
-    def __str__(self):
-        return "and [\n" + super().__str__()
+    # def __str__(self):
+    #     return "and [\n" + super().__str__()
 
 
 class NotOperation(Operation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
 
-    def __str__(self):
-        return "not [\n" + super().__str__()
+    # def __str__(self):
+    #     return "not [\n" + super().__str__()
 
 
 class OrOperation(Operation):
     def __init__(self, operands, **kwargs):
         super().__init__(operands, **kwargs)
 
-    def __str__(self):
-        return "or [\n" + super().__str__()
+    # def __str__(self):
+    #     return "or [\n" + super().__str__()
 
 
 class AssignmentOperation(Operation):
@@ -118,18 +110,19 @@ class AssignmentOperation(Operation):
         self.predicate = Operation.from_dict(predicate)
         self.value = value
 
-    def __str__(self):
-        return f"({str(self.predicate)}) => {self.variable} = {self.value}"
+    # def __str__(self):
+    #     return f"({str(self.predicate)}) => {self.variable} = {self.value}"
+
+class IfOperation(Operation):
+    def __init__(self, operands: List[Dict[str, Any]], variable: str, value: Any):
+        print(operands)
+        super().__init__(operands)
 
 
 class IfElseOperation(Operation):
     def __init__(self, operands: List[Dict[str, Any]]):
         super().__init__(operands)
-
-    def __str__(self):
-        return f"ifelse [\n{super().__str__()}]"
-
-
+    
 class BaseTransformer(ABC):
     def __init__(self):
         super().__init__()
@@ -138,6 +131,26 @@ class BaseTransformer(ABC):
     @property
     def s(self) -> str:
         return " " * self.indent
+
+class StringTransformer(BaseTransformer):
+    
+    def EnterEqualOperation(self, other: EqualOperation):
+        print(f"{other.target} == {other.value}", end='')
+    
+    def EnterInOperation(self, other: InOperation):
+        print(f"{other.target} in ({', '.join([str(x) for x in other.value])})", end="")
+    
+    def WhileIfElseOperation(self, other: IfElseOperation):
+        print(f"\nelse ", end='')
+
+    def EnterIfOperation(self, other: IfOperation):
+        print(f"if (", end='')
+
+    def ExitIfOperation(self, other: IfOperation):
+        print(f"):", end='')
+
+    
+
 
 
 class PandasTransformer(BaseTransformer):
@@ -207,6 +220,7 @@ if __name__ == "__main__":
     Operation.register_operation("in", InOperation)
     Operation.register_operation("assign", AssignmentOperation)
     Operation.register_operation("ifelse", IfElseOperation)
+    Operation.register_operation("if", IfOperation)
 
     # create compound operation from dictionary
     res1 = Operation.from_dict(d)
@@ -214,7 +228,11 @@ if __name__ == "__main__":
 
     # demonstrate variable walking
     v = PandasTransformer(df="df", variable="var1")
-    res1.walk(v)
+    #res1.walk(v)
+
+    v2 = StringTransformer()
+    #res1.walk(v2)
+
 
     # reading from json file
     import json
@@ -223,5 +241,5 @@ if __name__ == "__main__":
         j = json.load(fin)
 
     res2 = Operation.from_dict(j)
-    res2.walk(v)
+    res2.walk(v2)
     # print(res2)
