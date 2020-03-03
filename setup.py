@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="Zelazny7", # Replace with your own username
+    name="Zelazny7",  # Replace with your own username
     version="0.0.1",
     author="Eric E. Graves",
     author_email="gravcon5@gmail.com",
@@ -14,8 +14,8 @@ setuptools.setup(
     url="https://gitlab.ins.risk.regn.net/minneapolis-python-users/rosetta",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3",        
+        "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.8',
+    python_requires=">=3.8",
 )

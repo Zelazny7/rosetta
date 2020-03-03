@@ -12,7 +12,7 @@ In this manner, variable logic can be specified in a language agnostic way and o
 any other language that has a concrete BaseTransformer.
 
 ```json
-{
+json = {
     "op": "and",
     "operands": [
         {
@@ -55,9 +55,9 @@ operations are visited:
 ```python
 from rosetta import Operation, PandasTransformer
 
-res = Operation.from_dict(...)
+res = Operation.from_dict(json)
 tf = PandasTransformer(df="df", variable="new_variable")
-res.walk(tf)
+tf.walk(res)
 ```
 
 Ouputs the following code:
