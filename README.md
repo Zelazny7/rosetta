@@ -53,11 +53,11 @@ I have created a very simple PandasTransformer that has methods that trigger whe
 operations are visited:
 
 ```python
-from rosetta import Operation, PandasTransformer
+from rosetta import Operation, PandasVisitor
 
 res = Operation.from_dict(json)
-tf = PandasTransformer(df="df", variable="new_variable")
-tf.walk(res)
+tf = PandasVisitor(df="df", variable="new_variable")
+tf.visit(res)
 ```
 
 Ouputs the following code:
