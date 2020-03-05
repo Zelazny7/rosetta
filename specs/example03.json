@@ -1,0 +1,52 @@
+{
+    "op": "map",
+    "operands": [
+        {
+            "op": "assign",
+            "operands": [
+                {
+                    "op": "eq",
+                    "target": "add1naprop",
+                    "value": 1
+                }
+            ],
+            "value": 0
+        },
+        {
+            "op": "map",
+            "operands": [
+                {
+                    "op": "assign",
+                    "operands": [
+                        {
+                            "op": "eq",
+                            "target": "add1naprop",
+                            "value": 2
+                        }
+                    ],
+                    "value": 0
+                },
+                {
+                    "op": "map",
+                    "operands": [
+                        {
+                            "op": "assign",
+                            "operands": [
+                                {
+                                    "op": "eq",
+                                    "target": "add1naprop",
+                                    "value": 3
+                                }
+                            ],
+                            "value": 0
+                        },
+                        {
+                            "op": "else",
+                            "value": -1
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

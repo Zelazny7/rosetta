@@ -1,9 +1,9 @@
 {
     "op": "ifelse",
+    "variable": "iv_add1naprop",
     "operands": [
         {
             "op": "if",
-            "variable": "iv_add1naprop",
             "operands": [
                 {
                     "op": "eq",
@@ -15,7 +15,6 @@
         },
         {
             "op": "if",
-            "variable": "iv_add1naprop",
             "operands": [
                 {
                     "op": "in",
@@ -30,7 +29,6 @@
         },
         {
             "op": "if",
-            "variable": "iv_add1naprop",
             "operands": [
                 {
                     "op": "eq",
@@ -42,7 +40,6 @@
         },
         {
             "op": "if",
-            "variable": "iv_add1naprop",
             "operands": [
                 {
                     "op": "and",
