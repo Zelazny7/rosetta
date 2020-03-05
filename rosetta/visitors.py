@@ -1,94 +1,128 @@
-from __future__ import annotations
-from rosetta.operations import *
+import ast
+from typing import List, Optional, Union
+from io import TextIOWrapper
 
 
-def invoke(object: BaseVisitor, prefix: str, op: Operation) -> None:
-    """Check if object has `prefix` + `type(op).__name__` as an attribute and call"""
-    klass = type(op).__name__
-    func = getattr(object, prefix + klass, None)
-    if func is not None:
-        func(op)
-
-
-class BaseVisitor(ABC):
-    def __init__(self, indent_size=2):
+class PandasVisitor(ast.NodeVisitor):
+    def __init__(self, data_frame_id: str = "df"):
         super().__init__()
-        self._indent = 0
-        self.indent_size = indent_size
+        self.indent: int = 0
+        self.result: List[str] = []
+        self.if_counter: int = 0
+        self.if_assign_name: Optional[str] = None
+        self.data_frame_id = data_frame_id
 
-    @property
-    def s(self) -> str:
-        """Create spaces for formatting output"""
-        return " " * self._indent
+    def parse(self, file: Union[str, TextIOWrapper]):
+        if isinstance(file, str):
+            with open(file, "r") as fin:
+                tree = ast.parse(fin.read())
+        elif isinstance(file, TextIOWrapper):
+            tree = ast.parse(file.read())
 
-    def visit(self, op: Operation):
-        """Walk Operation and call matching methods in `other` object"""
+        self.visit(tree)
+        return ''.join(self.result)
 
-        invoke(self, "Enter", op)
+    def visit_USub(self, node):
+        self.result += ["-"]
 
-        # Call walk on children if they exist
-        self._indent += self.indent_size
-        for i, operand in enumerate(op.operands):
-            self.visit(operand)
+    def visit_Gt(self, node):
+        self.result += [" > "]
 
-            if i < len(op.operands) - 1:
-                invoke(self, "While", op)
+    def visit_BoolOp(self, node):
+        op = "and" if isinstance(node, ast.And) else "or"
+        self.result += ["("]
+        super().visit(node.values[0])
+        self.result += [") ", op, " ("]
+        super().visit(node.values[1])
+        self.result += [")"]
 
-            if i == len(op.operands):
-                invoke(self, "Last", op)
+    def visit_Eq(self, node):
+        self.result += [" == "]
 
-        self._indent -= self.indent_size
+    def visit_Compare(self, node: ast.Compare):
+        if isinstance(node.ops[0], ast.In):
+            super().visit(node.left)
+            self.result += [".isin("]
+            super().visit(node.comparators[0])
+            self.result += [")"]
+        elif isinstance(node.ops[0], ast.NotIn):
+            self.result += ["~"]
+            super().visit(node.left)
+            self.result += [".isin("]
+            super().visit(node.comparators[0])
+            self.result += [")"]
+        else:
+            super().generic_visit(node)
 
-        invoke(self, "Exit", op)
+    def visit_Attribute(self, node):
+        key = node.value.id + node.attr
+        if key.lower() == "npnan":
+            self.result.append("np.nan")
 
+    def visit_Call(self, node):
+        func = node.func.id
+        if func == "min":
+            self.result += ["np.minimum("]
+        elif func == "max":
+            self.result += ["np.maximum("]
+        elif func == "floor":
+            self.result += ["np.floor("]
+        else:
+            raise ValueError(f"Function, {func}, not supported. Line: {node.lineno}")
 
-class StringVisitor(BaseVisitor):
-    def EnterEqualOperation(self, other: EqualOperation):
-        print(f"{other.target} == {other.value}", end="")
+        self.visit(node.args[0])
+        self.result += [", "]
+        self.visit(node.args[1])
+        self.result += [")"]
 
-    def EnterInOperation(self, other: InOperation):
-        print(f"{other.target} in ({', '.join([str(x) for x in other.value])})", end="")
+    def visit_If(self, node):
+        if self.if_counter == 0:
+            self.if_assign_name = node.body[0].targets[0].id
+            self.result.append(f'{self.data_frame_id}["{self.if_assign_name}"] = ')
+        else:
+            self.result.append(", ")
 
-    def WhileIfElseOperation(self, other: IfElseOperation):
-        print(f"\nelse ", end="")
+        self.result.append(f"np.where(\n  ")
 
-    def EnterIfOperation(self, other: IfOperation):
-        print(f"if (", end="")
+        self.if_counter += 1
+        self.generic_visit(node)
 
-    def ExitIfOperation(self, other: IfOperation):
-        print(f"):", end="")
+        self.result.append(")")
+        if self.if_assign_name is None:
+            # add blank line between if blocks
+            self.result.append("\n\n")
 
+        self.if_counter -= 1
+        self.if_assign_name = None
 
-class PandasVisitor(BaseVisitor):
-    def __init__(self, df: str, variable: str):
-        super().__init__()
-        self.variable = variable
-        self.df = df
+    def visit_Assign(self, node):
+        if self.if_counter > 0:
+            self.result.append(", ")
+        super().generic_visit(node)
 
-    def EnterInOperation(self, other: InOperation):
-        res = f'{self.s}({self.df}["{other.target}"].isin({str(other.value)}))'
-        print(res, end="")
+    def visit_Name(self, node):
+        if node.id != self.if_assign_name:
+            self.result += [f'{self.data_frame_id}["{node.id}"]']
+        super().generic_visit(node)
 
-    def EnterAndOperation(self, other: AndOperation):
-        print(self.s + "(", end="")
+    def visit_Constant(self, node):
+        if self.if_counter > 0:
+            if isinstance(node.value, str):
+                self.result += [f'"{node.value}"']
+            else:
+                self.result += [str(node.value)]
 
-    def WhileAndOperation(self, other: AndOperation):
-        print(" &")
+        super().generic_visit(node)
 
-    def ExitAndOperation(self, other: AndOperation):
-        print(")", end="")
+    # def visit_In(self, node):
+    #     self.result += [".isin("]
+    #     self.result += [")"]
 
-    def EnterEqualOperation(self, other: EqualOperation):
-        print(f'({self.df}["{other.target}"] == {other.value})', end="")
+    def visit_List(self, node):
+        self.result += ["["]
+        for i, el in enumerate(node.elts):
+            super().visit(el)
+            if i < len(node.elts) - 1:
+                self.result += [", "]
 
-    def EnterNotOperation(self, other: NotOperation):
-        print(f"{self.s}~", end="")
-
-    def EnterOrOperation(self, other: OrOperation):
-        print("(", end="")
-
-    def WhileOrOperation(self, other: OrOperation):
-        print(" |")
-
-    def ExitOrOperation(self, other: OrOperation):
-        print(")", end="")
+        self.result += ["]"]
