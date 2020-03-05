@@ -29,7 +29,7 @@ class PandasVisitor(ast.NodeVisitor):
         self.result += [" > "]
 
     def visit_BoolOp(self, node):
-        op = "and" if isinstance(node, ast.And) else "or"
+        op = " & " if isinstance(node, ast.And) else " | "
         self.result += ["("]
         super().visit(node.values[0])
         self.result += [") ", op, " ("]
@@ -113,10 +113,6 @@ class PandasVisitor(ast.NodeVisitor):
                 self.result += [str(node.value)]
 
         super().generic_visit(node)
-
-    # def visit_In(self, node):
-    #     self.result += [".isin("]
-    #     self.result += [")"]
 
     def visit_List(self, node):
         self.result += ["["]
