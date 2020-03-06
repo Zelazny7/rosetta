@@ -18,6 +18,8 @@ class PandasVisitor(ast.NodeVisitor):
                 tree = ast.parse(fin.read())
         elif isinstance(file, TextIOWrapper):
             tree = ast.parse(file.read())
+        else:
+            tree = file
 
         self.visit(tree)
         return ''.join(self.result)
@@ -104,6 +106,10 @@ class PandasVisitor(ast.NodeVisitor):
         if node.id != self.if_assign_name:
             self.result += [f'{self.data_frame_id}["{node.id}"]']
         super().generic_visit(node)
+    
+    def visit_Store(self, node):
+        if self.if_assign_name is None:
+            self.result.append(" = ")
 
     def visit_Constant(self, node):
         if self.if_counter > 0:

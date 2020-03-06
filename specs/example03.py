@@ -6,3 +6,7 @@ elif petal_length > petal_width:
     new_var = petal_width
 else:
     new_var = np.nan
+
+
+
+new_var2 = new_var

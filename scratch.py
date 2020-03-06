@@ -15,11 +15,12 @@ if __name__ == "__main__":
     # print(black.format_str(result, mode=black.FileMode()))
 
     result = pandas_visitor.parse("specs/example03.py")
-    f = compile(ast.parse(result), filename='tmp.txt', mode="exec")
+    print(result)
+    #f = compile(ast.parse(result), filename='tmp.txt', mode="exec")
 
 
-    exec(f)
+    #exec(f)
 
-    print(df.head())
+    #print(df.head())
 
     # ast.
